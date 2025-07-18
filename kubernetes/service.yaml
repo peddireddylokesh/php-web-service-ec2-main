@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-web-service
+  namespace: php-web-service-namespace
+  labels:
+    app: php-web-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: php-web-service

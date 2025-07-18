@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "Starting Apache server..."
+
+# Start Apache
+systemctl start httpd
+
+# Check if Apache started successfully
+if systemctl is-active httpd >/dev/null 2>&1; then
+  echo "Apache server started successfully."
+else
+  echo "Failed to start Apache server."
+  exit 1
+fi

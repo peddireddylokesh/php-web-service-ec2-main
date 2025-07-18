@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo "Setting up AWS CodeStar remote access..."
+
+# This script sets up AWS CodeStar remote access capabilities
+# Nothing to do for now since we're using Docker containers
+
+echo "CodeStar remote access setup completed."

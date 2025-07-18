@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo "Installing PHP dependencies..."
+
+# Check if Composer is installed
+if ! [ -x "$(command -v composer)" ]; then
+  echo "Installing Composer..."
+  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  php -r "unlink('composer-setup.php');"
+fi
+
+# Navigate to the application directory
+cd /var/www/html
+
+# Install dependencies
+composer install --no-interaction --no-progress --optimize-autoloader
+
+# Set proper permissions
+chown -R apache:apache /var/www/html
+chmod -R 755 /var/www/html
+
+echo "PHP dependencies installed successfully."

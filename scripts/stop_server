@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "Stopping Apache server..."
+
+# Check if Apache is running
+if systemctl is-active httpd >/dev/null 2>&1; then
+  # Stop Apache
+  systemctl stop httpd
+  echo "Apache server stopped successfully."
+else
+  echo "Apache server is not running."
+fi

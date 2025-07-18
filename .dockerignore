@@ -1,0 +1,99 @@
+# Version control
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Kubernetes
+kubernetes/
+
+# CI/CD
+Jenkinsfile
+.github/
+
+# Terraform
+infra/
+terraform.tfstate*
+.terraform/
+*.tfvars
+
+# PHP
+vendor/
+node_modules/
+
+# Tests
+tests/
+phpunit.xml
+
+# Logs
+logs/
+*.log
+# Version control
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Kubernetes
+kubernetes/
+
+# CI/CD
+Jenkinsfile
+.github/
+
+# Terraform
+infra/
+terraform.tfstate*
+.terraform/
+*.tfvars
+
+# PHP
+vendor/
+node_modules/
+
+# Tests
+tests/
+phpunit.xml
+
+# Logs
+logs/
+*.log
+.git
+.github
+.gitignore
+.idea
+.vscode
+vendor
+tests
+test-results
+composer.phar
+phpunit.cache
+*.md
+!README.md
+.phpunit.cache
+kubernetes
+deploy.sh
+appspec.yml
+setup.sh
+template.yml
+template-configuration.json
+# IDE & Editor folders
+.idea/
+.vscode/
+*.sublime-*
+
+# Keys & certs
+*.pem
+*.key
+# IDE & Editor folders
+.idea/
+.vscode/
+*.sublime-*
+
+# Keys & certs
+*.pem
+*.key

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+echo "Installing and configuring Apache..."
+
+# Install Apache if not already installed
+if ! [ -x "$(command -v httpd)" ]; then
+  yum update -y
+  yum install -y httpd
+fi
+
+# Configure Apache virtual host
+cat > /etc/httpd/conf.d/php-web-service.conf << 'EOL'
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog /var/log/httpd/error.log
+    CustomLog /var/log/httpd/access.log combined
+</VirtualHost>
+EOL
+
+# Ensure Apache is enabled and will start on boot
+systemctl enable httpd
+
+echo "Apache installed and configured successfully."
