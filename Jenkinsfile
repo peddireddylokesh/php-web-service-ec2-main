@@ -101,16 +101,18 @@ pipeline {
                     sh "sed -i 's|image: docker.io/peddireddylokesh/php-web-service:.*|image: ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}|' kubernetes/deployment.yaml"
                     sh "cat kubernetes/deployment.yaml | grep image: || echo 'Warning: Image tag not found in deployment.yaml'"
 
-                    withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-						sh "kubectl apply -f kubernetes/namespace.yaml || echo 'Warning: Failed to apply namespace.yaml'"
-                        sh "kubectl get namespace database-namespace || kubectl apply -f kubernetes/mysql-deployment.yaml || echo 'Warning: Failed to apply mysql-deployment.yaml'"
-                        sh "kubectl apply -f kubernetes/configmap.yml -n php-web-service-namespace || echo 'Warning: Failed to apply configmap.yml'"
-                        sh "kubectl apply -f kubernetes/secrets.yml -n php-web-service-namespace || echo 'Warning: Failed to apply secrets.yml'"
-                        sh "kubectl apply -f kubernetes/deployment.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply deployment.yaml'"
-                        sh "kubectl apply -f kubernetes/service.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply service.yaml'"
-                        sh "kubectl apply -f kubernetes/ingress.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply ingress.yaml'"
-                        sh "test -f kubernetes/network-policy.yaml && kubectl apply -f kubernetes/network-policy.yaml -n php-web-service-namespace || echo 'No network policy found, skipping'"
-                    }
+                   withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
+						withEnv(["AWS_REGION=${AWS_REGION}", "KUBECONFIG=${env.KUBECONFIG}"]) {
+							sh "kubectl apply -f kubernetes/namespace.yaml || echo 'Warning: Failed to apply namespace.yaml'"
+							sh "kubectl get namespace database-namespace || kubectl apply -f kubernetes/mysql-deployment.yaml || echo 'Warning: Failed to apply mysql-deployment.yaml'"
+							sh "kubectl apply -f kubernetes/configmap.yml -n php-web-service-namespace || echo 'Warning: Failed to apply configmap.yml'"
+							sh "kubectl apply -f kubernetes/secrets.yml -n php-web-service-namespace || echo 'Warning: Failed to apply secrets.yml'"
+							sh "kubectl apply -f kubernetes/deployment.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply deployment.yaml'"
+							sh "kubectl apply -f kubernetes/service.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply service.yaml'"
+							sh "kubectl apply -f kubernetes/ingress.yaml -n php-web-service-namespace || echo 'Warning: Failed to apply ingress.yaml'"
+							sh "test -f kubernetes/network-policy.yaml && kubectl apply -f kubernetes/network-policy.yaml -n php-web-service-namespace || echo 'No network policy found, skipping'"
+                		}
+                   }
                 }
             }
         }
@@ -118,12 +120,15 @@ pipeline {
         stage('Verify Deployment') {
 			steps {
 				script {
-					withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-						sh "kubectl rollout status deployment/${PROJECT_NAME} -n ${PROJECT_NAME}-namespace --timeout=300s"
-                    }
-                }
-            }
-        }
+					withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
+						withEnv(["AWS_REGION=${AWS_REGION}", "KUBECONFIG=${env.KUBECONFIG}"]) {
+							sh "kubectl rollout status deployment/${PROJECT_NAME} -n ${PROJECT_NAME}-namespace --timeout=300s"
+						}
+					}
+				}
+			}
+		}
+
     }
 
     post {
