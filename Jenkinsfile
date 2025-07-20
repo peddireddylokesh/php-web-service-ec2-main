@@ -99,22 +99,23 @@ pipeline {
         stage('Push Docker Image') {
 			steps {
 				script {
-					// Log in to Docker registry
+					// Log in to Docker
 					withCredentials([usernamePassword(credentialsId: 'docker-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-						sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
+								sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
 					}
 
-					// Tag latest first (before any push)
+					// Tag as latest first
 					sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest"
 
-					// Push both tags (main + latest)
+					// Push versioned and latest tags
 					sh """
 						docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || exit 1
 						docker push ${DOCKER_IMAGE_NAME}:latest || exit 1
 					"""
-                }
-            }
-        }
+				}
+			}
+		}
+
 
         stage('Deploy to Kubernetes') {
 			steps {
