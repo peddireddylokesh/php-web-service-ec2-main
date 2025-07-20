@@ -1,8 +1,8 @@
 pipeline {
-    agent any
+	agent any
 
     environment {
-        PROJECT_NAME = 'php-web-service'
+		PROJECT_NAME = 'php-web-service'
         DOCKER_REGISTRY = 'docker.io' // Replace with your registry (e.g., ECR: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com)
         DOCKER_IMAGE_NAME = "${DOCKER_REGISTRY}/peddireddylokesh/${PROJECT_NAME}"
         DOCKER_IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.substring(0,7)}"
@@ -13,22 +13,22 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+		stage('Checkout') {
+			steps {
+				checkout scm
             }
         }
 
         stage('Install Dependencies') {
-            steps {
-                script {
-                    // Check if composer is installed
+			steps {
+				script {
+					// Check if composer is installed
                     def composerExists = sh(script: 'command -v composer || true', returnStdout: true).trim()
 
                     if (composerExists) {
-                        sh 'composer install --no-interaction --no-progress --optimize-autoloader'
+						sh 'composer install --no-interaction --no-progress --optimize-autoloader'
                     } else {
-                        // Install composer if not available
+						// Install composer if not available
                         sh '''
                             php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
                             php composer-setup.php --install-dir=/usr/local/bin --filename=composer
@@ -40,23 +40,23 @@ pipeline {
             }
         }
         stage('Check PHP Version') {
-            steps {
-                sh 'php -v'
+			steps {
+				sh 'php -v'
             }
         }
 
 
         stage('Run Tests') {
-            steps {
-                script {
-                    // Check if PHPUnit is available
+			steps {
+				script {
+					// Check if PHPUnit is available
                     def phpunitExists = sh(script: 'test -f vendor/bin/phpunit && echo "exists" || echo "not exists"', returnStdout: true).trim()
 
                     if (phpunitExists == "exists") {
-                        sh 'mkdir -p test-results'
+						sh 'mkdir -p test-results'
                         sh 'vendor/bin/phpunit --log-junit test-results/test-results.xml || true'
                     } else {
-                        echo 'PHPUnit not found. Skipping tests.'
+						echo 'PHPUnit not found. Skipping tests.'
                         // Create a placeholder test result file
                         sh '''
                             mkdir -p test-results
@@ -66,16 +66,20 @@ pipeline {
                 }
             }
             post {
-                always {
-                    junit allowEmptyResults: true, testResults: 'test-results/*.xml'
-                }
+				always {
+					// Clean up only if images exist (avoid error)
+					sh """
+						docker image inspect ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} >/dev/null 2>&1 && docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || true
+						docker image inspect ${DOCKER_IMAGE_NAME}:latest >/dev/null 2>&1 && docker rmi ${DOCKER_IMAGE_NAME}:latest || true
+					"""
+				}
             }
         }
 
         stage('Build Docker Image') {
-            steps {
-                script {
-                    // Add build timestamp to Docker build args
+			steps {
+				script {
+					// Add build timestamp to Docker build args
                     def buildTimestamp = sh(script: 'date -u "+%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
 
                     // Build the Docker image with build args
@@ -93,27 +97,29 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            steps {
-                script {
-                    // Log in to Docker registry
-                    withCredentials([usernamePassword(credentialsId: 'docker-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
-                    }
+			steps {
+				script {
+					// Log in to Docker registry
+					withCredentials([usernamePassword(credentialsId: 'docker-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+						sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
+					}
 
-                    // Push the Docker image
-                    sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+					// Tag latest first (before any push)
+					sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest"
 
-                    // Tag as latest and push
-                    sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest"
-                    sh "docker push ${DOCKER_IMAGE_NAME}:latest"
+					// Push both tags (main + latest)
+					sh """
+						docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || exit 1
+						docker push ${DOCKER_IMAGE_NAME}:latest || exit 1
+					"""
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    // Create backup of deployment file
+			steps {
+				script {
+					// Create backup of deployment file
                     sh "cp kubernetes/deployment.yaml kubernetes/deployment.yaml.bak"
 
                     // Update Kubernetes deployment YAML with the new image tag
@@ -124,7 +130,7 @@ pipeline {
 
                     // Apply Kubernetes manifests
                     withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-                        // Create namespace first if it doesn't exist
+						// Create namespace first if it doesn't exist
                         sh "kubectl apply -f kubernetes/namespace.yaml"
 
                         // Check if MySQL deployment exists and deploy if needed
@@ -145,10 +151,10 @@ pipeline {
         }
 
         stage('Verify Deployment') {
-            steps {
-                script {
-                    withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-                        sh "kubectl rollout status deployment/${PROJECT_NAME} -n ${PROJECT_NAME}-namespace --timeout=300s"
+			steps {
+				script {
+					withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
+						sh "kubectl rollout status deployment/${PROJECT_NAME} -n ${PROJECT_NAME}-namespace --timeout=300s"
                     }
                 }
             }
@@ -156,14 +162,14 @@ pipeline {
     }
 
     post {
-        success {
-            echo "Deployment of ${PROJECT_NAME} was successful!"
+		success {
+			echo "Deployment of ${PROJECT_NAME} was successful!"
         }
         failure {
-            echo "Deployment of ${PROJECT_NAME} failed!"
+			echo "Deployment of ${PROJECT_NAME} failed!"
         }
         always {
-            // Clean up local Docker images
+			// Clean up local Docker images
             sh "docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest || true"
         }
     }
