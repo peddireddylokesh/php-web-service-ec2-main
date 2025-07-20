@@ -3,7 +3,7 @@
         'name' => 'lokesh/php-web-service',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'c6dbd8993bd78acfa7f9ebf18bf46ca5b59499af',
+        'reference' => '69f217ee106fdf816e600c6beae37bd9cc88b061',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'lokesh/php-web-service' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'c6dbd8993bd78acfa7f9ebf18bf46ca5b59499af',
+            'reference' => '69f217ee106fdf816e600c6beae37bd9cc88b061',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
