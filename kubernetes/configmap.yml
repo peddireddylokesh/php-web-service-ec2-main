@@ -1,9 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: php-config
+  name: php-web-service-config
   namespace: php-web-service-namespace
 data:
-  APP_ENV: production
-  LOG_LEVEL: info
-  API_ENDPOINT: https://api.example.com
+  app.environment: "production"
+  app.debug: "false"
