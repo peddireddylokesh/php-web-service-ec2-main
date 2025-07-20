@@ -12,17 +12,24 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.vcs-ref=$VCS_REF \
       maintainer="Peddireddy Lokesh"
 
-# Install dependencies
+# Install dependencies and kubectl
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libzip-dev \
     nano \
+    curl \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) zip pdo pdo_mysql gd
+    && docker-php-ext-install -j$(nproc) zip pdo pdo_mysql gd \
+    && curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
+    && rm kubectl
 
 # Enable Apache modules
 RUN a2enmod rewrite
