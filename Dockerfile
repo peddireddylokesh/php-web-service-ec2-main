@@ -27,8 +27,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) zip pdo pdo_mysql gd \
-    && KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt) \
-    && curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && curl -LO "$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
     && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl \
     && rm kubectl
 
