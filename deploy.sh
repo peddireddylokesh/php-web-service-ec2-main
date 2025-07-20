@@ -60,53 +60,11 @@ fi
 # 2. Update Kubernetes manifests
 echo -e "\n${YELLOW}Step 2: Updating Kubernetes manifests...${NC}"
 
-# Check if deployment.yaml exists, create it if missing
-if [ ! -f kubernetes/deployment.yaml ]; then
-    echo -e "${YELLOW}Creating deployment.yaml as it's missing...${NC}"
-    cat > kubernetes/deployment.yaml << EOF
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: php-web-service
-  namespace: php-web-service-namespace
-  labels:
-    app: php-web-service
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: php-web-service
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
-  template:
-    metadata:
-      labels:
-        app: php-web-service
-    spec:
-      containers:
-      - name: php-web-service
-        image: docker.io/peddireddylokesh/php-web-service:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-          name: http
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-        env:
-        - name: DB_HOST
-          value: "mysql-service.database-namespace.svc.cluster.local"
-        - name: DB_NAME
-          value: "php_web_service"
-EOF
-fi
+# Make sure the scripts are executable
+chmod +x scripts/create-deployment.sh scripts/ensure-k8s-manifests.sh
+
+# Run the script to ensure all K8s manifests exist
+./scripts/ensure-k8s-manifests.sh
 
 # Update the image tag in deployment file
 sed -i.bak "s|image: docker.io/peddireddylokesh/php-web-service:.*|image: docker.io/peddireddylokesh/php-web-service:${IMAGE_TAG}|" kubernetes/deployment.yaml
@@ -194,11 +152,11 @@ kubectl get namespace php-web-service-namespace >/dev/null 2>&1 || kubectl apply
 
 # 4. Deploy to Kubernetes
 echo -e "\n${YELLOW}Step 4: Deploying to Kubernetes...${NC}"
-kubectl apply -f kubernetes/configmap.yaml
-kubectl apply -f kubernetes/secrets.yaml
-kubectl apply -f kubernetes/deployment.yaml
-kubectl apply -f kubernetes/service.yaml
-kubectl apply -f kubernetes/ingress.yaml
+kubectl apply -f kubernetes/configmap.yml || echo -e "${YELLOW}Warning: Failed to apply configmap.yml${NC}"
+kubectl apply -f kubernetes/secrets.yml || echo -e "${YELLOW}Warning: Failed to apply secrets.yml${NC}"
+kubectl apply -f kubernetes/deployment.yaml || echo -e "${YELLOW}Warning: Failed to apply deployment.yaml${NC}"
+kubectl apply -f kubernetes/service.yaml || echo -e "${YELLOW}Warning: Failed to apply service.yaml${NC}"
+kubectl apply -f kubernetes/ingress.yaml || echo -e "${YELLOW}Warning: Failed to apply ingress.yaml${NC}"
 
 # 5. Verify deployment
 echo -e "\n${YELLOW}Step 5: Verifying deployment...${NC}"
