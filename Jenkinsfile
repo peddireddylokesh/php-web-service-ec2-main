@@ -67,13 +67,19 @@ pipeline {
             }
             post {
 				always {
-					// Clean up only if images exist (avoid error)
 					sh """
 						docker image inspect ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} >/dev/null 2>&1 && docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || true
 						docker image inspect ${DOCKER_IMAGE_NAME}:latest >/dev/null 2>&1 && docker rmi ${DOCKER_IMAGE_NAME}:latest || true
 					"""
 				}
-            }
+				success {
+					echo "Deployment of ${PROJECT_NAME} was successful!"
+				}
+				failure {
+					echo "Deployment of ${PROJECT_NAME} failed!"
+				}
+			}
+
         }
 
         stage('Build Docker Image') {
@@ -91,7 +97,7 @@ pipeline {
                     )
 
                     // Verify the image was built successfully
-                    sh "docker images | grep ${DOCKER_IMAGE_NAME}"
+                    sh "docker images | grep ${DOCKER_IMAGE_NAME} || true"
                 }
             }
         }
@@ -99,22 +105,22 @@ pipeline {
         stage('Push Docker Image') {
 			steps {
 				script {
-					// Log in to Docker
-					withCredentials([usernamePassword(credentialsId: 'docker-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-								sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
-					}
+						withCredentials([usernamePassword(credentialsId: 'docker-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+							sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin ${DOCKER_REGISTRY}"
+				}
 
-					// Tag as latest first
-					sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest"
+				// Tag image as latest first
+				sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKER_IMAGE_NAME}:latest || true"
 
-					// Push versioned and latest tags
-					sh """
-						docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || exit 1
-						docker push ${DOCKER_IMAGE_NAME}:latest || exit 1
+				// Push both tags with fail-fast strategy
+				sh """
+					docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || (echo 'Versioned tag push failed' && exit 1)
+					docker push ${DOCKER_IMAGE_NAME}:latest || (echo 'Latest tag push failed' && exit 1)
 					"""
 				}
 			}
 		}
+
 
 
         stage('Deploy to Kubernetes') {
