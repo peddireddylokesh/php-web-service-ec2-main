@@ -90,6 +90,11 @@ fi
 # Setup Minikube if needed
 minikube status || minikube start --driver=docker
 
+# Verify Kubernetes manifests
+echo "Verifying Kubernetes manifests..."
+chmod +x scripts/verify-manifests.sh
+./scripts/verify-manifests.sh
+
 # Install Helm
 echo "Installing Helm..."
 if ! command -v helm &> /dev/null; then

@@ -59,6 +59,56 @@ fi
 
 # 2. Update Kubernetes manifests
 echo -e "\n${YELLOW}Step 2: Updating Kubernetes manifests...${NC}"
+
+# Check if deployment.yaml exists, create it if missing
+if [ ! -f kubernetes/deployment.yaml ]; then
+    echo -e "${YELLOW}Creating deployment.yaml as it's missing...${NC}"
+    cat > kubernetes/deployment.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-web-service
+  namespace: php-web-service-namespace
+  labels:
+    app: php-web-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: php-web-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: php-web-service
+    spec:
+      containers:
+      - name: php-web-service
+        image: docker.io/peddireddylokesh/php-web-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: DB_HOST
+          value: "mysql-service.database-namespace.svc.cluster.local"
+        - name: DB_NAME
+          value: "php_web_service"
+EOF
+fi
+
+# Update the image tag in deployment file
 sed -i.bak "s|image: docker.io/peddireddylokesh/php-web-service:.*|image: docker.io/peddireddylokesh/php-web-service:${IMAGE_TAG}|" kubernetes/deployment.yaml
 
 # 3. Create the namespace if it doesn't exist

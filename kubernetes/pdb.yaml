@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: php-web-service-pdb
+  namespace: php-web-service-namespace
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: php-web-service

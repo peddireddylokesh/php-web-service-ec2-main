@@ -63,7 +63,56 @@ $probeType = isset($_GET['probe']) ? $_GET['probe'] : 'general';
 
 // Perform basic checks
 $checks = performBasicHealthChecks();
+<?php
+/**
+ * Health check endpoint for Kubernetes probes
+ */
 
+// Basic service health check
+$status = ['status' => 'ok', 'timestamp' => time()];
+
+// Check database connection if needed
+$checkDb = false;
+if (isset($_GET['check_db']) && $_GET['check_db'] === 'true') {
+    $checkDb = true;
+}
+
+if ($checkDb) {
+    try {
+        $host = getenv('DB_HOST') ?: 'mysql-service.database-namespace.svc.cluster.local';
+        $dbname = getenv('DB_NAME') ?: 'php_web_service';
+        $username = getenv('DB_USER') ?: 'php_user';
+        $password = getenv('DB_PASSWORD') ?: 'php_password';
+
+        $dsn = "mysql:host=$host;dbname=$dbname";
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+
+        $pdo = new PDO($dsn, $username, $password, $options);
+        $stmt = $pdo->query('SELECT 1');
+
+        $status['database'] = 'connected';
+    } catch (PDOException $e) {
+        $status = [
+            'status' => 'error',
+            'message' => 'Database connection failed',
+            'error' => $e->getMessage(),
+            'timestamp' => time()
+        ];
+        http_response_code(500);
+    }
+}
+
+// Set appropriate headers
+header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
+// Output response
+echo json_encode($status);
 // Add database check if enabled
 if (getenv('ENABLE_DB_CHECK') === 'true') {
     $checks['database'] = performDatabaseHealthCheck();

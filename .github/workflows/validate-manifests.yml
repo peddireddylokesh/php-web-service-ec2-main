@@ -1,0 +1,58 @@
+name: Validate Kubernetes Manifests
+
+on:
+  push:
+    paths:
+      - 'kubernetes/**'
+  pull_request:
+    paths:
+      - 'kubernetes/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Validate manifests
+        run: |
+          # Make verification script executable
+          chmod +x scripts/verify-manifests.sh
+          # Run verification
+          ./scripts/verify-manifests.sh
+
+      - name: Check for missing manifests
+        id: check_files
+        run: |
+          REQUIRED_FILES=("kubernetes/deployment.yaml" "kubernetes/service.yaml" "kubernetes/namespace.yaml")
+          MISSING_FILES=()
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              MISSING_FILES+=("$file")
+            fi
+          done
+
+          if [ ${#MISSING_FILES[@]} -ne 0 ]; then
+            echo "Missing required Kubernetes manifests: ${MISSING_FILES[*]}"
+            echo "::set-output name=missing_files::true"
+          else
+            echo "All required Kubernetes manifests are present"
+            echo "::set-output name=missing_files::false"
+          fi
+
+      - name: Create issue for missing manifests
+        if: steps.check_files.outputs.missing_files == 'true'
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/ISSUE_TEMPLATE/missing-k8s-manifests.md
+          update_existing: true

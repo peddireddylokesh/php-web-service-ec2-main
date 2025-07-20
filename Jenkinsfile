@@ -124,10 +124,46 @@ pipeline {
 
 
         stage('Deploy to Kubernetes') {
-			steps {
-				script {
-					// Create backup of deployment file
-                    sh "cp kubernetes/deployment.yaml kubernetes/deployment.yaml.bak"
+			            steps {
+			                script {
+			                    // Check if deployment file exists, create it if not
+			                    sh """
+			                        if [ ! -f kubernetes/deployment.yaml ]; then
+			                            echo "Creating deployment.yaml as it's missing"
+			                            cat > kubernetes/deployment.yaml << 'EOF'
+			                            apiVersion: apps/v1
+			                            kind: Deployment
+			                            metadata:
+			                              name: php-web-service
+			                              namespace: php-web-service-namespace
+			                              labels:
+			                                app: php-web-service
+			                            spec:
+			                              replicas: 2
+			                              selector:
+			                                matchLabels:
+			                                  app: php-web-service
+			                              template:
+			                                metadata:
+			                                  labels:
+			                                    app: php-web-service
+			                                spec:
+			                                  containers:
+			                                  - name: php-web-service
+			                                    image: ${DOCKER_REGISTRY}/peddireddylokesh/${PROJECT_NAME}:latest
+			                                    ports:
+			                                    - containerPort: 80
+			                                    env:
+			                                    - name: DB_HOST
+			                                      value: "mysql-service.database-namespace.svc.cluster.local"
+			                                    - name: DB_NAME
+			                                      value: "php_web_service"
+			                            EOF
+			                        else
+			                            # Create backup of deployment file
+			                            cp kubernetes/deployment.yaml kubernetes/deployment.yaml.bak
+			                        fi
+			                    """
 
                     // Update Kubernetes deployment YAML with the new image tag
                     sh "sed -i 's|image: ${DOCKER_REGISTRY}/peddireddylokesh/${PROJECT_NAME}:.*|image: ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}|' kubernetes/deployment.yaml"
