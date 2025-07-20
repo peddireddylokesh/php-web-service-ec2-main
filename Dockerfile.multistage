@@ -1,3 +1,15 @@
+# Build stage
+FROM composer:2.4 as composer
+
+WORKDIR /app
+
+# Copy composer files
+COPY composer.json composer.lock* ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Main stage
 FROM php:8.0-apache
 
 # Build arguments
@@ -14,14 +26,7 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
     libzip-dev \
-    nano \
-    curl \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev && \
@@ -30,19 +35,17 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install kubectl separately
-RUN curl -LO "https://dl.k8s.io/release/v1.28.5/bin/linux/amd64/kubectl" && \
-    chmod +x kubectl && \
-    mv kubectl /usr/local/bin/
-
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy code into container
+# Copy application code
 COPY . /var/www/html/
+
+# Copy composer dependencies from build stage
+COPY --from=composer /app/vendor/ /var/www/html/vendor/
 
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html && \
