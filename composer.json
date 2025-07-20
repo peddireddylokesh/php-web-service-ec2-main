@@ -12,9 +12,7 @@
     "php": ">=7.4",
     "ext-json": "*",
     "ext-pdo": "*",
-    "ext-pdo_mysql": "*"
-  },
-  "require-dev": {
+    "ext-pdo_mysql": "*",
     "phpunit/phpunit": "^9.5"
   },
   "autoload": {

@@ -39,6 +39,12 @@ pipeline {
                 }
             }
         }
+        stage('Check PHP Version') {
+            steps {
+                sh 'php -v'
+            }
+        }
+
 
         stage('Run Tests') {
             steps {
