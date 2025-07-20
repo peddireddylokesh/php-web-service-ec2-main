@@ -12,8 +12,7 @@
     "php": ">=7.4",
     "ext-json": "*",
     "ext-pdo": "*",
-    "ext-pdo_mysql": "*",
-    "phpunit/phpunit": "^9.5"
+    "ext-pdo_mysql": "*"
   },
   "autoload": {
     "psr-4": {
@@ -31,5 +30,9 @@
   "config": {
     "sort-packages": true,
     "optimize-autoloader": true
+  },
+  "require-dev": {
+    "doctrine/instantiator": "^1.5",
+    "phpunit/phpunit": "^9.5"
   }
 }
