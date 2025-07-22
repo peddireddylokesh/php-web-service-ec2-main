@@ -37,14 +37,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /health.php
-            port: 80
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /health.php
-            port: 80
+            port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
         env:
