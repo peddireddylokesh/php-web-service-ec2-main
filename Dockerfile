@@ -35,14 +35,21 @@ RUN curl -LO "https://dl.k8s.io/release/v1.28.5/bin/linux/amd64/kubectl" && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin/
 
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer
+
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy code into container
+# Copy application code
 COPY . /var/www/html/
+
+# Run Composer to install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
 # Fix permissions
 RUN chown -R www-data:www-data /var/www/html && \
