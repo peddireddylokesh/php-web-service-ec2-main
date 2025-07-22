@@ -3,14 +3,10 @@ kind: Service
 metadata:
   name: php-web-service
   namespace: php-web-service-namespace
-  labels:
-    app: php-web-service
 spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-      targetPort: 8080
-      protocol: TCP
-      name: http
+  type: LoadBalancer
   selector:
     app: php-web-service
+  ports:
+    - port: 80
+      targetPort: 80
